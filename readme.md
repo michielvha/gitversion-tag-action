@@ -60,5 +60,5 @@ In this workflow:
 Ensure that you have the `gitversion.yml` configuration file in your repository or provide the correct path to your configuration file in the `configFilePath` input.
 
 
-### reference
+### Reference
 - [Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions)
