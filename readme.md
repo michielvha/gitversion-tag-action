@@ -58,3 +58,7 @@ In this workflow:
 - The "Tag a git version" action is used to determine the version and tag the repository accordingly.
 
 Ensure that you have the `gitversion.yml` configuration file in your repository or provide the correct path to your configuration file in the `configFilePath` input.
+
+
+### reference
+- [Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions)
