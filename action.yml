@@ -1,5 +1,10 @@
+# reference: https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions
 name: 'Tag a git version'
 description: 'Tagging a repo with a gitVersion'
+
+branding:
+  icon: arrow-right-circle
+  color: blue
 
 inputs:
   configFilePath:
