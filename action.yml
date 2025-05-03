@@ -11,6 +11,10 @@ inputs:
     description: 'Path to the GitVersion configuration file'
     required: true
     default: 'gitversion.yml'
+  # tagMessage:
+  #   description: 'Optional custom tag message'
+  #   required: false
+
 
 outputs:
   semVer:
@@ -35,5 +39,26 @@ runs:
     shell: bash
     run: |
       echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-      git tag ${{ steps.gitversion.outputs.semVer }}
+      git tag ${{ steps.gitversion.outputs.semVer }} -m "TAG_MESSAGE"
       git push origin ${{ steps.gitversion.outputs.semVer }}
+
+  # Possible improvement
+  # - name: Tag the repo
+  #   shell: bash
+  #   run: |
+  #     set -e
+  
+  #     TAG="${{ steps.gitversion.outputs.semVer }}"
+  #     BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  #     MESSAGE="${{ inputs.tagMessage }}"
+  #     if [ -z "$MESSAGE" ]; then
+  #       MESSAGE="Release $TAG from $BRANCH"
+  #     fi
+  
+  #     echo "Tagging $TAG with message: $MESSAGE"
+  
+  #     git config user.name "GitHub Actions"
+  #     git config user.email "actions@github.com"
+  
+  #     git tag -a "$TAG" -m "$MESSAGE"
+  #     git push origin "$TAG"
