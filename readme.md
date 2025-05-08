@@ -46,7 +46,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Tag the repo
-      uses: MKTHEPLUGG/gitversion-tag-action@v1
+      uses: michielvha/gitversion-tag-action@v1
       with:
         configFilePath: gitversion.yml
 ```
