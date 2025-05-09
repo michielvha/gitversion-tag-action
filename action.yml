@@ -1,4 +1,5 @@
 # reference: https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions
+# TODO: Add tag message & allow custom input overwrite
 name: 'Tag a git version'
 description: 'Tagging a repo with a gitVersion'
 
