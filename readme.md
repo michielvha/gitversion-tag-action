@@ -1,8 +1,8 @@
-# Tag a Git Version Action
+# Git Version Tag Action
 
 ## Overview
 
-The "Tag a git version" action is designed to tag a repository with a version determined by GitVersion. GitVersion is a tool that uses your git repository's history to determine the next semantic version tag. This action automates the process of tagging your repository based on the GitVersion configuration.
+The "gitversion-tag-action" is designed to tag a repository with a version determined by GitVersion. GitVersion is a tool that uses your git repository's history to determine the next semantic version tag. This action automates the process of tagging your repository based on the GitVersion configuration.
 
 ## Inputs
 
