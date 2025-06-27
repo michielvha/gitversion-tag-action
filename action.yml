@@ -35,13 +35,23 @@ runs:
     with:
       useConfigFile: true
       configFilePath: ${{ inputs.configFilePath }}
-  - name: tag the repo
-    # if: ${{ github.ref == 'refs/heads/master' }}
+  - name: Tag the repo
     shell: bash
     run: |
       echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-      git tag ${{ steps.gitversion.outputs.semVer }} -m "TAG_MESSAGE"
+      COMMIT_MSG=$(git log -1 --pretty=%s)
+      echo "Latest commit message: $COMMIT_MSG"
+      git config user.name "GitHub Actions"
+      git config user.email "actions@github.com"
+      git tag ${{ steps.gitversion.outputs.semVer }} -m "$COMMIT_MSG"
       git push origin ${{ steps.gitversion.outputs.semVer }}
+  # - name: tag the repo
+  #   # if: ${{ github.ref == 'refs/heads/master' }}
+  #   shell: bash
+  #   run: |
+  #     echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+  #     git tag ${{ steps.gitversion.outputs.semVer }} -m "TAG_MESSAGE"
+  #     git push origin ${{ steps.gitversion.outputs.semVer }}
 
   # Possible improvement
   # - name: Tag the repo
