@@ -45,7 +45,8 @@ runs:
       git config user.email "actions@github.com"
       git tag ${{ steps.gitversion.outputs.semVer }} -m "$COMMIT_MSG"
       git push origin ${{ steps.gitversion.outputs.semVer }}
-  # - name: tag the repo
+      
+  # - name: tag the repo # old version before adding tag message
   #   # if: ${{ github.ref == 'refs/heads/master' }}
   #   shell: bash
   #   run: |
