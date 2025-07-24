@@ -8,7 +8,7 @@ The "gitversion-tag-action" is designed to tag a repository with a version deter
 
 Below are the inputs required for this action:
 
-- **configFilePath**: Path to the GitVersion configuration file.
+- **configFilePath**:
   - Description: Path to the GitVersion configuration file.
   - Required: True
   - Default: 'gitversion.yml'
