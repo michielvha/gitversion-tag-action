@@ -83,4 +83,5 @@ It's possible to pass the version to other actions via the output.
 ```
 
 ### Reference
+- [GitVersion Configuration File Specification](https://gitversion.net/docs/reference/configuration) - Complete reference for the configuration file. My pre-made config can be found [here](gitversion.example.yml)
 - [Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions)
