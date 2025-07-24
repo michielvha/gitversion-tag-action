@@ -1,0 +1,33 @@
+# https://gitversion.net/docs/reference/configuration
+# manually verify with `gitversion (/showconfig)`
+# IMPORTANT: on initial onboarding comment out everything but workflow after first run you can put it back
+workflow: GitHubFlow/v1
+# Custom strategies - this differs from default
+
+strategies:
+  - MergeMessage
+  - TaggedCommit
+  - TrackReleaseBranches
+  - VersionInBranchName
+branches:
+  main:
+    regex: ^master$|^main$
+    increment: Patch
+    prevent-increment:
+      of-merged-branch: true
+    track-merge-target: false
+    track-merge-message: true
+    is-main-branch: true
+    mode: ContinuousDeployment # also do it here
+  release:
+    # Custom release branch configuration
+    regex: ^release/(?<BranchName>[0-9]+\.[0-9]+\.[0-9]+)$
+    label: ''
+    increment: None
+    prevent-increment:
+      when-current-commit-tagged: true
+      of-merged-branch: true
+    is-release-branch: true
+    mode: ContinuousDeployment # do not use ContinuousDelivery, else it will increment the version with a suffix on each commit.
+    source-branches:
+      - main
