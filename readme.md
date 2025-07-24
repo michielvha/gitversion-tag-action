@@ -1,4 +1,4 @@
-# Git Version Tag Action
+# GitVersion Tag Action
 
 ## Overview
 
