@@ -4,6 +4,11 @@
 workflow: GitHubFlow/v1
 # Custom strategies - this differs from default
 
+major-version-bump-message: '(BREAKING CHANGE|^[a-z]+(\([^)]+\))?!: )'
+minor-version-bump-message: '^feat(\([^)]+\))?: '
+patch-version-bump-message: '^(fix|perf|refactor|revert)(\([^)]+\))?: '
+no-bump-message: '^(chore|docs|style|test|ci)(\([^)]+\))?: '
+
 strategies:
   - MergeMessage
   - TaggedCommit
