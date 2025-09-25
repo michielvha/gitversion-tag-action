@@ -8,6 +8,7 @@ major-version-bump-message: '(BREAKING CHANGE|^[a-z]+(\([^)]+\))?!: )'
 minor-version-bump-message: '^feat(\([^)]+\))?: '
 patch-version-bump-message: '^(fix|perf|refactor|revert)(\([^)]+\))?: '
 no-bump-message: '^(chore|docs|style|test|ci)(\([^)]+\))?: '
+commit-message-incrementing: MergeMessageOnly # Only commit message is taking into account, history in PR is ignored, seems best for terraform IMO
 
 strategies:
   - MergeMessage
@@ -36,3 +37,6 @@ branches:
     mode: ContinuousDeployment # do not use ContinuousDelivery, else it will increment the version with a suffix on each commit.
     source-branches:
       - main
+
+assembly-versioning-scheme: MajorMinorPatch
+assembly-informational-format: '{SemVer}'
