@@ -1,6 +1,6 @@
 # reference: https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions
 # TODO: Add tag message & allow custom input overwrite
-name: 'Tag a git version'
+name: 'GitVersion Tag Action'
 description: 'Tag a repo with a version calculated by GitVersion'
 
 branding:
