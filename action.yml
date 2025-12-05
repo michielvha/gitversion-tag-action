@@ -12,6 +12,10 @@ inputs:
     description: 'Path to the GitVersion configuration file'
     required: true
     default: 'gitversion.yml'
+  prefix:
+    description: 'Prefix to add to the tag (e.g., "v")'
+    required: false
+    default: ''
   # tagMessage:
   #   description: 'Optional custom tag message'
   #   required: false
@@ -43,8 +47,8 @@ runs:
       echo "Latest commit message: $COMMIT_MSG"
       git config user.name "GitHub Actions"
       git config user.email "actions@github.com"
-      git tag ${{ steps.gitversion.outputs.semVer }} -m "$COMMIT_MSG"
-      git push origin ${{ steps.gitversion.outputs.semVer }}
+      git tag "${{ inputs.prefix }}${{ steps.gitversion.outputs.semVer }}" -m "$COMMIT_MSG"
+      git push origin "${{ inputs.prefix }}${{ steps.gitversion.outputs.semVer }}"
       
   # - name: tag the repo # old version before adding tag message
   #   # if: ${{ github.ref == 'refs/heads/master' }}
