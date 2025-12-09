@@ -7,8 +7,8 @@ semantic-version-format: Loose # Allow non-strict semver tags
 # Custom version bump messages
 major-version-bump-message: '(BREAKING CHANGE|^.+!:)'
 minor-version-bump-message: '^feat(\([^)]+\))?:\s'
-patch-version-bump-message: '^(fix|perf|refactor|revert)(\([^)]+\))?:\s'
-no-bump-message: '^(chore|docs|style|test|ci)(\([^)]+\))?:\s'
+patch-version-bump-message: '^(fix|chore|perf|refactor|revert)(\([^)]+\))?:\s'
+no-bump-message: '^(docs|style|test|ci)(\([^)]+\))?:\s'
 commit-message-incrementing: Enabled # Evaluate all commit messages, not just merge commits
 # Custom strategies - this differs from default
 strategies:
