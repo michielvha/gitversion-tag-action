@@ -12,6 +12,7 @@ no-bump-message: '^(docs|style|test|ci)(\([^)]+\))?:\s'
 commit-message-incrementing: Enabled # Evaluate all commit messages, not just merge commits
 # Custom strategies - this differs from default
 strategies:
+  - Fallback                    # Returns 0.0.0 when no base versions found, increments to 0.0.1 on first commit
   - MergeMessage
   - TaggedCommit
   - TrackReleaseBranches # this ensures that commits from release branches are tracked and included in the versioning process.
