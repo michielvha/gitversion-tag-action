@@ -30,12 +30,12 @@ runs:
   using: composite
   steps:
   - name: Install GitVersion
-    uses: gittools/actions/gitversion/setup@v0
+    uses: gittools/actions/gitversion/setup@v4.5.0
     with:
       versionSpec: '6.0.0'
   - name: Determine Version
     id: gitversion
-    uses: gittools/actions/gitversion/execute@v0
+    uses: gittools/actions/gitversion/execute@v4.5.0
     with:
       useConfigFile: true
       configFilePath: ${{ inputs.configFilePath }}
