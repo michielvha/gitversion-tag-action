@@ -30,14 +30,15 @@ runs:
   using: composite
   steps:
   - name: Install GitVersion
-    uses: gittools/actions/gitversion/setup@v0
+    # SHA-pinned for supply-chain safety; Renovate keeps the digest + trailing tag comment fresh.
+    uses: gittools/actions/gitversion/setup@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
     with:
       versionSpec: '6.0.0'
   - name: Determine Version
     id: gitversion
-    uses: gittools/actions/gitversion/execute@v0
+    uses: gittools/actions/gitversion/execute@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
     with:
-      useConfigFile: true
+      # `useConfigFile` was removed in gittools v4: setting configFilePath is enough.
       configFilePath: ${{ inputs.configFilePath }}
   - name: Tag the repo
     shell: bash

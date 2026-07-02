@@ -1,0 +1,45 @@
+{
+  // Renovate (Mend-hosted app) config for gitversion-tag-action.
+  //
+  // This action is consumed by nearly every one of my app repos, so its own
+  // supply chain is critical: the two `gittools/actions` steps in action.yml are
+  // SHA-pinned (`@<digest> # v4.x.x`) rather than tracking a mutable major branch.
+  // Renovate maintains those digests here — it re-pins to the newest commit and
+  // keeps the human-readable tag as a trailing comment (`pinDigests`). Nothing is
+  // auto-merged: every bump is a reviewable PR, and everything detected (including
+  // rate-limited / major updates) surfaces on the Dependency Dashboard so nothing hides.
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    ':dependencyDashboard',
+    ':semanticCommits', // repo uses conventional commits; keep chore(deps): ...
+    ':timezone(Europe/Brussels)',
+  ],
+  dependencyDashboard: true,
+  semanticCommitType: 'chore',
+  labels: ['dependencies'],
+  // No hourly throttle so security digest bumps aren't starved; sane concurrent cap.
+  prHourlyLimit: 0,
+  prConcurrentLimit: 5,
+  packageRules: [
+    {
+      // Pin every GitHub Action (incl. the composite deps in action.yml) to a digest
+      // and keep the version tag as a comment. This is the "tagDigest" behaviour.
+      matchManagers: ['github-actions'],
+      pinDigests: true,
+    },
+    {
+      // Group non-major action bumps (digest re-pins + patch/minor) into one PR to cut noise.
+      matchManagers: ['github-actions'],
+      matchUpdateTypes: ['digest', 'pin', 'minor', 'patch'],
+      groupName: 'github-actions non-major',
+    },
+    {
+      // Surface every major individually and label it — a gittools major (e.g. v4 -> v5)
+      // needs its own review, not a silent batch.
+      matchManagers: ['github-actions'],
+      matchUpdateTypes: ['major'],
+      addLabels: ['major-upgrade'],
+    },
+  ],
+}
