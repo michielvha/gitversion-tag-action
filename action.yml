@@ -33,7 +33,8 @@ runs:
     # SHA-pinned for supply-chain safety; Renovate keeps the digest + trailing tag comment fresh.
     uses: gittools/actions/gitversion/setup@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
     with:
-      versionSpec: '6.0.0'
+      # renovate: datasource=nuget depName=GitVersion.Tool versioning=nuget
+      versionSpec: '6.8.0'
   - name: Determine Version
     id: gitversion
     uses: gittools/actions/gitversion/execute@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
