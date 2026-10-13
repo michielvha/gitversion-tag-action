@@ -86,6 +86,21 @@ test('metadata preserves defaults, pins, and version outputs', () => {
   for (const script of readdirSync(join(actionPath, 'scripts')).filter(name => name.endsWith('.sh'))) {
     run('bash', ['-n', join(actionPath, 'scripts', script)]);
   }
+  for (const filename of readdirSync(join(actionPath, '.github/workflows')).filter(name => name.endsWith('.yml'))) {
+    const workflow = parse(readFileSync(join(actionPath, '.github/workflows', filename), 'utf8'));
+    for (const job of Object.values(workflow.jobs)) {
+      if (job.uses && !job.uses.startsWith('./')) {
+        assert.match(job.uses, /@[a-f0-9]{40}$/);
+        if (job.uses.startsWith('vhco-pro/.github/')) {
+          assert.equal(job.with['workflow-ref'], job.uses.split('@')[1]);
+        }
+      }
+      for (const step of job.steps ?? []) {
+        if (step.uses && !step.uses.startsWith('./')) assert.match(step.uses, /@[a-f0-9]{40}$/);
+        if (step.run) assert.equal(step.run.trim().split('\n').length, 1, `${filename}: move logic into scripts`);
+      }
+    }
+  }
 });
 
 test('bundled config is selected without changing a caller config', context => {

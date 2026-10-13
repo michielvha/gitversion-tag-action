@@ -128,6 +128,10 @@ and exercises the composite action in dry-run mode.
 `main`, it publishes an exact version tag and a GitHub Release with Conventional
 Commit notes. It does not create or update major/minor alias tags.
 
+Regression and composite smoke checks run through the reusable local test
+workflow before the release job. The caller passes the same SHA as `workflow-ref`
+so shared scripts and configuration come from the selected workflow revision.
+
 Pull requests run the same workflow as a dry-run preview, producing notes in the
 job summary without publishing anything. Manual runs also default to dry-run.
 The caller grants `contents: write`; its own `GITHUB_TOKEN` writes the release
