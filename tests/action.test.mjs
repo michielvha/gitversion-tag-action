@@ -233,9 +233,11 @@ test('invalid boolean inputs fail clearly', context => {
 });
 
 test('GitVersion conventional commit regressions', { skip: !process.env.GITVERSION_BINARY }, async context => {
+  const fixtureEnvironment = Object.fromEntries(Object.entries(process.env)
+    .filter(([name]) => !name.startsWith('GITHUB_')));
   const version = (repository) => JSON.parse(run(process.env.GITVERSION_BINARY, [
     repository, '/output', 'json', '/config', join(actionPath, 'gitversion.yml'), '/nocache',
-  ]).replace(/^\uFEFF/, '')).SemVer;
+  ], { env: fixtureEnvironment }).replace(/^\uFEFF/, '')).SemVer;
   const scenarios = [
     ['onboarding without tags', [], undefined, '0.0.0'],
     ['docs do not bump', ['docs: clarify usage'], '1.2.3', '1.2.3'],
