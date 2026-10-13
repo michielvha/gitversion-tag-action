@@ -23,10 +23,6 @@ inputs:
     description: 'Compute all version outputs without creating or pushing tags'
     required: false
     default: 'false'
-  floating-tags:
-    description: 'Update major and major.minor tags on stable releases only'
-    required: false
-    default: 'false'
   tagMessage:
     description: 'Tag annotation; empty uses the latest commit subject'
     required: false
@@ -170,12 +166,8 @@ runs:
     shell: bash
     env:
       SEMVER: ${{ steps.gitversion.outputs.semVer }}
-      MAJOR: ${{ steps.gitversion.outputs.major }}
-      MINOR: ${{ steps.gitversion.outputs.minor }}
-      PRERELEASE_TAG: ${{ steps.gitversion.outputs.preReleaseTag }}
       PREFIX: ${{ inputs.prefix }}
       DRY_RUN: ${{ inputs.dry-run }}
-      FLOATING_TAGS: ${{ inputs.floating-tags }}
       TAG_MESSAGE: ${{ inputs.tagMessage }}
     run: |
       set -euo pipefail
@@ -184,12 +176,10 @@ runs:
           "$1" "$2" "$3" "$4" >> "$GITHUB_OUTPUT"
         exit 0
       }
-      for BOOLEAN in "$DRY_RUN" "$FLOATING_TAGS"; do
-        case "$BOOLEAN" in
-          true|false) ;;
-          *) echo "::error::dry-run and floating-tags must be true or false"; exit 1 ;;
-        esac
-      done
+      case "$DRY_RUN" in
+        true|false) ;;
+        *) echo "::error::dry-run must be true or false"; exit 1 ;;
+      esac
       if [[ -z "$SEMVER" ]]; then
         echo "::error::GitVersion produced no semantic version"
         exit 1
@@ -218,14 +208,5 @@ runs:
       else
         git tag -a "$TAG" -m "$TAG_MESSAGE"
       fi
-      TAGS=("$TAG")
-      REFS=("refs/tags/$TAG:refs/tags/$TAG")
-      if [[ "$FLOATING_TAGS" == "true" && -z "$PRERELEASE_TAG" ]]; then
-        for FLOATING in "$PREFIX$MAJOR" "$PREFIX$MAJOR.$MINOR"; do
-          git tag -fa "$FLOATING" -m "$TAG_MESSAGE"
-          TAGS+=("$FLOATING")
-          REFS+=("+refs/tags/$FLOATING:refs/tags/$FLOATING")
-        done
-      fi
-      git push --atomic origin "${REFS[@]}"
-      finish true "$TAG" "${TAGS[*]}" ""
+      git push origin "refs/tags/$TAG:refs/tags/$TAG"
+      finish true "$TAG" "$TAG" ""

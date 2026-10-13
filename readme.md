@@ -12,7 +12,6 @@ The **gitversion-tag-action** automates tagging your repository with a semantic 
 | `useDefaultConfig` | `false` | Force the bundled config even if a custom path is supplied. |
 | `prefix` | Empty | Tag prefix, for example `v`. Existing unprefixed tagging remains the default. |
 | `dry-run` | `false` | Compute version outputs without creating or pushing tags. |
-| `floating-tags` | `false` | Also update major and major.minor tags on stable releases. Prereleases never move them. |
 | `tagMessage` | Empty | Custom tag annotation. Empty uses the latest commit subject. |
 
 ## Outputs
@@ -36,13 +35,7 @@ The action follows these steps:
 
 1. Select the config bundled with this action, or the explicitly supplied custom config. The action never copies a config into the caller's checkout.
 2. Install the pinned GitVersion tool using `gittools/actions` and compute the version and all version outputs. The runner needs the .NET SDK required by the pinned tool; GitHub-hosted Ubuntu runners include it.
-3. Unless `dry-run` is enabled, create an annotated exact tag and push only the intended refs. An exact tag already on the remote is a successful no-op. Existing exact tags are never force-updated.
-
-When `floating-tags: 'true'`, stable releases also update major and major.minor
-tags in the same atomic push. With `prefix: v`, release `1.2.3` publishes
-`v1.2.3`, `v1`, and `v1.2`. Prerelease `1.3.0-preview.1` publishes only
-`v1.3.0-preview.1`. Floating tags are opt-in to preserve existing behavior.
-Serialize release jobs using workflow `concurrency` when updating floating tags.
+3. Unless `dry-run` is enabled, create an annotated exact tag and push only that ref. An exact tag already on the remote is a successful no-op. Existing exact tags are never force-updated.
 
 ## Shared Configuration
 

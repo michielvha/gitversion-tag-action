@@ -47,12 +47,8 @@ function execute(step, repository, overrides = {}) {
       CONFIG_FILE_PATH: '',
       USE_DEFAULT_CONFIG: 'false',
       SEMVER: '1.2.3',
-      MAJOR: '1',
-      MINOR: '2',
-      PRERELEASE_TAG: '',
       PREFIX: '',
       DRY_RUN: 'false',
-      FLOATING_TAGS: 'false',
       TAG_MESSAGE: '',
       ...overrides,
     },
@@ -74,7 +70,7 @@ test('metadata preserves defaults, pins, and version outputs', () => {
   assert.equal(action.inputs.prefix.default, '');
   assert.equal(action.inputs.configFilePath.default, '');
   assert.equal(action.inputs['dry-run'].default, 'false');
-  assert.equal(action.inputs['floating-tags'].default, 'false');
+  assert.equal(action.inputs['floating-tags'], undefined);
   assert.equal(action.outputs.semVer.value, '${{ steps.gitversion.outputs.semVer }}');
   for (const field of ['FullSemVer', 'InformationalVersion', 'MajorMinorPatch', 'PreReleaseTag', 'Sha']) {
     assert.equal(action.outputs[field].value, `\${{ steps.gitversion.outputs.${field} }}`);
@@ -173,32 +169,36 @@ test('a conflicting local immutable tag is not replaced', context => {
   assert.equal(git('ls-remote', '--tags', 'origin'), '');
 });
 
-test('stable floating tags move without deleting or rewriting exact tags', context => {
+test('releases push only exact tags without rewriting prior versions', context => {
   const { repository, git } = fixture(context);
-  const options = { PREFIX: 'v', FLOATING_TAGS: 'true' };
-  assert.equal(successful(execute(tagStep, repository, options))['pushed-tags'], 'v1.2.3 v1 v1.2');
+  const options = { PREFIX: 'v' };
+  assert.equal(successful(execute(tagStep, repository, options))['pushed-tags'], 'v1.2.3');
   const exact = git('rev-parse', 'v1.2.3');
   git('commit', '--allow-empty', '-m', 'fix: next release');
-  successful(execute(tagStep, repository, { ...options, SEMVER: '1.2.4' }));
+  assert.equal(successful(execute(tagStep, repository, {
+    ...options, SEMVER: '1.2.4',
+  }))['pushed-tags'], 'v1.2.4');
   assert.equal(git('rev-parse', 'v1.2.3'), exact);
-  for (const tag of ['v1', 'v1.2', 'v1.2.4']) {
-    assert.equal(git('rev-parse', `${tag}^{commit}`), git('rev-parse', 'HEAD'));
-    assert.ok(git('ls-remote', '--tags', 'origin', `refs/tags/${tag}`));
-  }
+  assert.equal(git('rev-parse', 'v1.2.4^{commit}'), git('rev-parse', 'HEAD'));
+  const tags = git('ls-remote', '--refs', '--tags', 'origin').split('\n')
+    .map(line => line.split('\t')[1]).sort();
+  assert.deepEqual(tags, ['refs/tags/v1.2.3', 'refs/tags/v1.2.4']);
 });
 
-test('prereleases never move floating tags or claim a stable tag', context => {
+test('prereleases publish only their exact version tag', context => {
   const { repository, git } = fixture(context);
-  const options = { PREFIX: 'v', FLOATING_TAGS: 'true' };
+  const options = { PREFIX: 'v' };
   successful(execute(tagStep, repository, options));
-  const floating = git('rev-parse', 'v1');
+  const stable = git('rev-parse', 'v1.2.3');
   git('commit', '--allow-empty', '-m', 'feat: preview');
   const outputs = successful(execute(tagStep, repository, {
-    ...options, SEMVER: '1.3.0-preview.1', MINOR: '3', PRERELEASE_TAG: 'preview.1',
+    ...options, SEMVER: '1.3.0-preview.1',
   }));
   assert.equal(outputs['pushed-tags'], 'v1.3.0-preview.1');
-  assert.equal(git('rev-parse', 'v1'), floating);
-  assert.equal(git('ls-remote', '--tags', 'origin', 'refs/tags/v1.3.0', 'refs/tags/v1.3'), '');
+  assert.equal(git('rev-parse', 'v1.2.3'), stable);
+  const tags = git('ls-remote', '--refs', '--tags', 'origin').split('\n')
+    .map(line => line.split('\t')[1]).sort();
+  assert.deepEqual(tags, ['refs/tags/v1.2.3', 'refs/tags/v1.3.0-preview.1']);
 });
 
 test('tag message is treated as data, not shell code', context => {
@@ -229,7 +229,6 @@ test('invalid boolean inputs fail clearly', context => {
   const { repository } = fixture(context);
   assert.notEqual(execute(configStep, repository, { USE_DEFAULT_CONFIG: 'yes' }).status, 0);
   assert.notEqual(execute(tagStep, repository, { DRY_RUN: 'yes' }).status, 0);
-  assert.notEqual(execute(tagStep, repository, { FLOATING_TAGS: 'yes' }).status, 0);
 });
 
 test('GitVersion conventional commit regressions', { skip: !process.env.GITVERSION_BINARY }, async context => {
