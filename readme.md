@@ -6,19 +6,61 @@ The **gitversion-tag-action** automates tagging your repository with a semantic 
 
 ## Inputs
 
-![inputs](img/inputs.png)
+| Input | Default | Description |
+| --- | --- | --- |
+| `configFilePath` | Empty | Custom GitVersion config path, relative to the caller's checkout or absolute. Empty uses the bundled config. |
+| `useDefaultConfig` | `false` | Force the bundled config even if a custom path is supplied. |
+| `prefix` | Empty | Tag prefix, for example `v`. Existing unprefixed tagging remains the default. |
+| `dry-run` | `false` | Compute version outputs without creating or pushing tags. |
+| `floating-tags` | `false` | Also update major and major.minor tags on stable releases. Prereleases never move them. |
+| `tagMessage` | Empty | Custom tag annotation. Empty uses the latest commit subject. |
 
 ## Outputs
 
-![outputs](img/outputs.png)
+`semVer` remains available for existing callers. The action also forwards every
+version output declared by the pinned `gittools/actions/gitversion/execute`,
+including `FullSemVer`, `InformationalVersion`, `Major`, `Minor`, `Patch`,
+`MajorMinorPatch`, `PreReleaseTag`, `Sha`, `ShortSha`, and `VersionSourceDistance`.
+See [action.yml](action.yml) for the complete list.
+
+| Output | Description |
+| --- | --- |
+| `tagged` | `true` if this run pushed tags; otherwise `false`. |
+| `pushed-tag` | Exact tag pushed, or empty if skipped. Includes the chosen prefix and prerelease label. |
+| `pushed-tags` | All pushed tags, separated by spaces. |
+| `skip-reason` | `dry-run`, `tag-exists`, or empty after a successful push. |
 
 ## Execution
 
 The action follows these steps:
 
-1. **Install GitVersion**: Installs the specified version of GitVersion.
-2. **Determine Version**: Uses GitVersion to determine the semantic version based on the repository's history and the provided configuration file.
-3. **Tag the Repo**: The repository is tagged with the determined version and the tag is pushed to the origin.
+1. Select the config bundled with this action, or the explicitly supplied custom config. The action never copies a config into the caller's checkout.
+2. Install the pinned GitVersion tool using `gittools/actions` and compute the version and all version outputs. The runner needs the .NET SDK required by the pinned tool; GitHub-hosted Ubuntu runners include it.
+3. Unless `dry-run` is enabled, create an annotated exact tag and push only the intended refs. An exact tag already on the remote is a successful no-op. Existing exact tags are never force-updated.
+
+When `floating-tags: 'true'`, stable releases also update major and major.minor
+tags in the same atomic push. With `prefix: v`, release `1.2.3` publishes
+`v1.2.3`, `v1`, and `v1.2`. Prerelease `1.3.0-preview.1` publishes only
+`v1.3.0-preview.1`. Floating tags are opt-in to preserve existing behavior.
+Serialize release jobs using workflow `concurrency` when updating floating tags.
+
+## Shared Configuration
+
+[gitversion.yml](gitversion.yml) is the central config shipped with the action.
+Consumers need no config file unless they want different versioning rules. Pin
+the action version to pin both its behavior and its config. The default recognizes
+both prefixed (`v1.2.3`) and unprefixed (`1.2.3`) version tags.
+
+| Commit | Increment |
+| --- | --- |
+| `feat!: ...`, `feat(scope)!: ...`, or an uppercase `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer | Major |
+| `feat: ...` or `feat(scope): ...` | Minor |
+| `fix`, `perf`, `refactor`, or `revert`, optionally scoped | Patch |
+| `chore`, `docs`, `style`, `test`, `ci`, and other non-breaking types | None |
+
+All commits since the version source are evaluated. A documentation commit does
+not suppress a preceding feature or breaking change. The main branch uses no
+automatic increment; maintenance branches use `release/MAJOR.MINOR.PATCH`.
 
 ## Example Workflow
 
@@ -31,7 +73,6 @@ To use the **Tag a git version** action in a GitHub workflow, refer to the examp
 name: GitVersion Tag
 
 permissions:
-  id-token: write
   contents: write
 
 on:
@@ -47,22 +88,22 @@ jobs:
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
+        fetch-tags: true
     - name: Tag the repo
       id: gitversion
       uses: michielvha/gitversion-tag-action@main
-      with:
-        configFilePath: gitversion.yml
 ```
 
-
-> [!IMPORTANT]
-> Ensure that you have the `gitversion.yml` configuration file in your repository's root or provide the correct path to your configuration file by using the `configFilePath` input.
+To keep an existing custom config, pass `configFilePath: gitversion.yml` (or its
+actual path). Explicit paths remain supported and missing files fail clearly.
+Remove that input, or add `useDefaultConfig: 'true'`, to adopt the bundled rules.
+For pull-request builds, use `dry-run: 'true'` and `contents: read` permissions.
 
 In this workflow:
 
 - The action is triggered on pushes to the `main` branch and can also be manually triggered using the `workflow_dispatch` event.
 - The repository is checked out with a fetch depth of 0, ensuring all tags and branches are fetched.
-- The `SemVer` is calculated and tagged to the repo together with the latest commit message.
+- The `semVer` is calculated using the bundled configuration and tagged together with the latest commit message.
 
 It's possible to pass the version to other actions via the output.
 
@@ -72,10 +113,17 @@ It's possible to pass the version to other actions via the output.
         id: docker-build
         uses: michielvha/docker-release-action@v1
         with:
-          version: ${{ steps.gitversion.outputs.semver }}
+          version: ${{ steps.gitversion.outputs.semVer }}
 ...
 ```
 
+## Development
+
+Run `npm ci` and `npm test` for config-selection and Git-remote regression tests.
+Set `GITVERSION_BINARY` to a GitVersion executable to also run the real-history
+version tests. CI downloads the exact version pinned in [action.yml](action.yml)
+and exercises the composite action in dry-run mode.
+
 ### Reference
-- [GitVersion Config File Specification](https://gitversion.net/docs/reference/configuration) - Complete reference for the configuration file. My pre-made config can be found [here](gitversion.example.yml)
+- [GitVersion Config File Specification](https://gitversion.net/docs/reference/configuration) - Complete reference for the configuration file. The bundled config is [here](gitversion.yml).
 - [Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions)

@@ -1,5 +1,4 @@
 # reference: https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions
-# TODO: Add tag message & allow custom input overwrite
 name: 'GitVersion Tag Action'
 description: 'Tag a repo with a version calculated by GitVersion'
 
@@ -9,26 +8,151 @@ branding:
 
 inputs:
   configFilePath:
-    description: 'Path to the GitVersion configuration file'
-    required: true
-    default: 'gitversion.yml'
+    description: 'Custom GitVersion config path; empty uses the config shipped with this action'
+    required: false
+    default: ''
+  useDefaultConfig:
+    description: 'Use the bundled config even when configFilePath is supplied'
+    required: false
+    default: 'false'
   prefix:
     description: 'Prefix to add to the tag (e.g., "v")'
     required: false
     default: ''
-  # tagMessage:
-  #   description: 'Optional custom tag message'
-  #   required: false
-
+  dry-run:
+    description: 'Compute all version outputs without creating or pushing tags'
+    required: false
+    default: 'false'
+  floating-tags:
+    description: 'Update major and major.minor tags on stable releases only'
+    required: false
+    default: 'false'
+  tagMessage:
+    description: 'Tag annotation; empty uses the latest commit subject'
+    required: false
+    default: ''
 
 outputs:
   semVer:
     description: 'The semantic version determined by GitVersion'
     value: ${{ steps.gitversion.outputs.semVer }}
+  AssemblySemFileVer:
+    description: 'Assembly file version'
+    value: ${{ steps.gitversion.outputs.AssemblySemFileVer }}
+  AssemblySemVer:
+    description: 'Assembly version'
+    value: ${{ steps.gitversion.outputs.AssemblySemVer }}
+  BranchName:
+    description: 'Branch used to compute the version'
+    value: ${{ steps.gitversion.outputs.BranchName }}
+  BuildMetaData:
+    description: 'Build metadata'
+    value: ${{ steps.gitversion.outputs.BuildMetaData }}
+  CommitDate:
+    description: 'Commit date'
+    value: ${{ steps.gitversion.outputs.CommitDate }}
+  CommitsSinceVersionSource:
+    description: 'Commits since the version source'
+    value: ${{ steps.gitversion.outputs.CommitsSinceVersionSource }}
+  EscapedBranchName:
+    description: 'Branch name safe for file names'
+    value: ${{ steps.gitversion.outputs.EscapedBranchName }}
+  FullBuildMetaData:
+    description: 'Full build metadata'
+    value: ${{ steps.gitversion.outputs.FullBuildMetaData }}
+  FullSemVer:
+    description: 'Semantic version including build metadata'
+    value: ${{ steps.gitversion.outputs.FullSemVer }}
+  InformationalVersion:
+    description: 'Informational version'
+    value: ${{ steps.gitversion.outputs.InformationalVersion }}
+  Major:
+    description: 'Major version number'
+    value: ${{ steps.gitversion.outputs.Major }}
+  MajorMinorPatch:
+    description: 'Major.Minor.Patch without a prerelease label'
+    value: ${{ steps.gitversion.outputs.MajorMinorPatch }}
+  Minor:
+    description: 'Minor version number'
+    value: ${{ steps.gitversion.outputs.Minor }}
+  Patch:
+    description: 'Patch version number'
+    value: ${{ steps.gitversion.outputs.Patch }}
+  PreReleaseLabel:
+    description: 'Prerelease label'
+    value: ${{ steps.gitversion.outputs.PreReleaseLabel }}
+  PreReleaseNumber:
+    description: 'Prerelease number'
+    value: ${{ steps.gitversion.outputs.PreReleaseNumber }}
+  PreReleaseTag:
+    description: 'Prerelease label and number'
+    value: ${{ steps.gitversion.outputs.PreReleaseTag }}
+  PreReleaseTagWithDash:
+    description: 'Prerelease tag with a leading dash'
+    value: ${{ steps.gitversion.outputs.PreReleaseTagWithDash }}
+  Sha:
+    description: 'Commit SHA'
+    value: ${{ steps.gitversion.outputs.Sha }}
+  ShortSha:
+    description: 'Short commit SHA'
+    value: ${{ steps.gitversion.outputs.ShortSha }}
+  UncommittedChanges:
+    description: 'Number of uncommitted changes'
+    value: ${{ steps.gitversion.outputs.UncommittedChanges }}
+  VersionSourceDistance:
+    description: 'Distance from the version source'
+    value: ${{ steps.gitversion.outputs.VersionSourceDistance }}
+  VersionSourceIncrement:
+    description: 'Increment from the version source'
+    value: ${{ steps.gitversion.outputs.VersionSourceIncrement }}
+  VersionSourceSemVer:
+    description: 'Version source semantic version'
+    value: ${{ steps.gitversion.outputs.VersionSourceSemVer }}
+  VersionSourceSha:
+    description: 'Version source SHA'
+    value: ${{ steps.gitversion.outputs.VersionSourceSha }}
+  WeightedPreReleaseNumber:
+    description: 'Weighted prerelease number'
+    value: ${{ steps.gitversion.outputs.WeightedPreReleaseNumber }}
+  tagged:
+    description: 'Whether this run pushed tags'
+    value: ${{ steps.tag.outputs.tagged }}
+  pushed-tag:
+    description: 'Exact tag pushed, or empty when skipped'
+    value: ${{ steps.tag.outputs.pushed-tag }}
+  pushed-tags:
+    description: 'All tags pushed, space separated'
+    value: ${{ steps.tag.outputs.pushed-tags }}
+  skip-reason:
+    description: 'dry-run, tag-exists, or empty when tags were pushed'
+    value: ${{ steps.tag.outputs.skip-reason }}
 
 runs:
   using: composite
   steps:
+  - name: Select GitVersion config
+    id: config
+    shell: bash
+    env:
+      ACTION_PATH: ${{ github.action_path }}
+      CONFIG_FILE_PATH: ${{ inputs.configFilePath }}
+      USE_DEFAULT_CONFIG: ${{ inputs.useDefaultConfig }}
+    run: |
+      set -euo pipefail
+      case "$USE_DEFAULT_CONFIG" in
+        true|false) ;;
+        *) echo "::error::useDefaultConfig must be true or false"; exit 1 ;;
+      esac
+      if [[ "$USE_DEFAULT_CONFIG" == "true" || -z "$CONFIG_FILE_PATH" ]]; then
+        CONFIG="$ACTION_PATH/gitversion.yml"
+      else
+        CONFIG="$CONFIG_FILE_PATH"
+      fi
+      if [[ ! -f "$CONFIG" ]]; then
+        echo "::error::GitVersion config not found at $CONFIG"
+        exit 1
+      fi
+      printf 'path=%s\n' "$CONFIG" >> "$GITHUB_OUTPUT"
   - name: Install GitVersion
     # SHA-pinned for supply-chain safety; Renovate keeps the digest + trailing tag comment fresh.
     uses: gittools/actions/gitversion/setup@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
@@ -40,43 +164,68 @@ runs:
     uses: gittools/actions/gitversion/execute@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
     with:
       # `useConfigFile` was removed in gittools v4: setting configFilePath is enough.
-      configFilePath: ${{ inputs.configFilePath }}
+      configFilePath: ${{ steps.config.outputs.path }}
   - name: Tag the repo
+    id: tag
     shell: bash
+    env:
+      SEMVER: ${{ steps.gitversion.outputs.semVer }}
+      MAJOR: ${{ steps.gitversion.outputs.major }}
+      MINOR: ${{ steps.gitversion.outputs.minor }}
+      PRERELEASE_TAG: ${{ steps.gitversion.outputs.preReleaseTag }}
+      PREFIX: ${{ inputs.prefix }}
+      DRY_RUN: ${{ inputs.dry-run }}
+      FLOATING_TAGS: ${{ inputs.floating-tags }}
+      TAG_MESSAGE: ${{ inputs.tagMessage }}
     run: |
-      echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-      COMMIT_MSG=$(git log -1 --pretty=%s)
-      echo "Latest commit message: $COMMIT_MSG"
-      git config user.name "GitHub Actions"
-      git config user.email "actions@github.com"
-      git tag "${{ inputs.prefix }}${{ steps.gitversion.outputs.semVer }}" -m "$COMMIT_MSG"
-      git push origin "${{ inputs.prefix }}${{ steps.gitversion.outputs.semVer }}"
-      
-  # - name: tag the repo # old version before adding tag message
-  #   # if: ${{ github.ref == 'refs/heads/master' }}
-  #   shell: bash
-  #   run: |
-  #     echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-  #     git tag ${{ steps.gitversion.outputs.semVer }} -m "TAG_MESSAGE"
-  #     git push origin ${{ steps.gitversion.outputs.semVer }}
-
-  # Possible improvement
-  # - name: Tag the repo
-  #   shell: bash
-  #   run: |
-  #     set -e
-  
-  #     TAG="${{ steps.gitversion.outputs.semVer }}"
-  #     BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  #     MESSAGE="${{ inputs.tagMessage }}"
-  #     if [ -z "$MESSAGE" ]; then
-  #       MESSAGE="Release $TAG from $BRANCH"
-  #     fi
-  
-  #     echo "Tagging $TAG with message: $MESSAGE"
-  
-  #     git config user.name "GitHub Actions"
-  #     git config user.email "actions@github.com"
-  
-  #     git tag -a "$TAG" -m "$MESSAGE"
-  #     git push origin "$TAG"
+      set -euo pipefail
+      finish() {
+        printf 'tagged=%s\npushed-tag=%s\npushed-tags=%s\nskip-reason=%s\n' \
+          "$1" "$2" "$3" "$4" >> "$GITHUB_OUTPUT"
+        exit 0
+      }
+      for BOOLEAN in "$DRY_RUN" "$FLOATING_TAGS"; do
+        case "$BOOLEAN" in
+          true|false) ;;
+          *) echo "::error::dry-run and floating-tags must be true or false"; exit 1 ;;
+        esac
+      done
+      if [[ -z "$SEMVER" ]]; then
+        echo "::error::GitVersion produced no semantic version"
+        exit 1
+      fi
+      echo "SemVer: $SEMVER"
+      if [[ "$DRY_RUN" == "true" ]]; then
+        finish false "" "" dry-run
+      fi
+      TAG="$PREFIX$SEMVER"
+      git check-ref-format "refs/tags/$TAG"
+      REMOTE_TAG=$(git ls-remote --tags origin "refs/tags/$TAG")
+      if [[ -n "$REMOTE_TAG" ]]; then
+        echo "Tag $TAG already exists on remote. Skipping tagging."
+        finish false "" "" tag-exists
+      fi
+      git config user.name "github-actions[bot]"
+      git config user.email "github-actions[bot]@noreply.github.com"
+      if [[ -z "$TAG_MESSAGE" ]]; then
+        TAG_MESSAGE=$(git log -1 --pretty=%s)
+      fi
+      if git show-ref --verify --quiet "refs/tags/$TAG"; then
+        if [[ "$(git rev-parse "refs/tags/$TAG^{commit}")" != "$(git rev-parse HEAD)" ]]; then
+          echo "::error::Local tag $TAG points to a different commit"
+          exit 1
+        fi
+      else
+        git tag -a "$TAG" -m "$TAG_MESSAGE"
+      fi
+      TAGS=("$TAG")
+      REFS=("refs/tags/$TAG:refs/tags/$TAG")
+      if [[ "$FLOATING_TAGS" == "true" && -z "$PRERELEASE_TAG" ]]; then
+        for FLOATING in "$PREFIX$MAJOR" "$PREFIX$MAJOR.$MINOR"; do
+          git tag -fa "$FLOATING" -m "$TAG_MESSAGE"
+          TAGS+=("$FLOATING")
+          REFS+=("+refs/tags/$FLOATING:refs/tags/$FLOATING")
+        done
+      fi
+      git push --atomic origin "${REFS[@]}"
+      finish true "$TAG" "${TAGS[*]}" ""

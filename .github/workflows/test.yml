@@ -1,0 +1,56 @@
+name: Test action
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install the pinned GitVersion for history tests
+        shell: bash
+        run: |
+          VERSION=$(node --input-type=module -e "import fs from 'node:fs'; import { parse } from 'yaml'; console.log(parse(fs.readFileSync('action.yml', 'utf8')).runs.steps.find(step => step.name === 'Install GitVersion').with.versionSpec)")
+          mkdir -p "$RUNNER_TEMP/gitversion"
+          curl -fsSL "https://github.com/GitTools/GitVersion/releases/download/$VERSION/gitversion-linux-x64-$VERSION.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP/gitversion"
+          chmod u+x "$RUNNER_TEMP/gitversion/gitversion"
+          echo "GITVERSION_BINARY=$RUNNER_TEMP/gitversion/gitversion" >> "$GITHUB_ENV"
+      - run: npm test
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Run the composite action without a caller config
+        id: version
+        uses: ./
+        with:
+          dry-run: 'true'
+      - name: Verify outputs and clean checkout
+        shell: bash
+        env:
+          SEMVER: ${{ steps.version.outputs.semVer }}
+          FULL_SEMVER: ${{ steps.version.outputs.FullSemVer }}
+          TAGGED: ${{ steps.version.outputs.tagged }}
+          SKIP_REASON: ${{ steps.version.outputs.skip-reason }}
+        run: |
+          test -n "$SEMVER"
+          test -n "$FULL_SEMVER"
+          test "$TAGGED" = false
+          test "$SKIP_REASON" = dry-run
+          git diff --exit-code
