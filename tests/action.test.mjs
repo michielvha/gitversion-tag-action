@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -80,7 +80,11 @@ test('metadata preserves defaults, pins, and version outputs', () => {
   }
   for (const step of action.runs.steps.filter(step => step.run)) {
     assert.ok(!step.run.includes('${{'), 'Inputs must enter shell scripts through environment variables');
+    assert.equal(step.run.trim().split('\n').length, 1, 'Workflow steps invoke scripts rather than embed logic');
     run('bash', ['-n'], { input: step.run });
+  }
+  for (const script of readdirSync(join(actionPath, 'scripts')).filter(name => name.endsWith('.sh'))) {
+    run('bash', ['-n', join(actionPath, 'scripts', script)]);
   }
 });
 

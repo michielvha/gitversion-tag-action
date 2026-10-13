@@ -112,6 +112,10 @@ It's possible to pass the version to other actions via the output.
 
 ## Development
 
+Repository instructions start in [AGENTS.md](AGENTS.md), which pins the personal
+conventions in `vhco-pro/docs`. Substantial shell logic and CI helpers live in
+`scripts/`; the action metadata and workflows invoke them.
+
 Use Node 24 or newer. Run `npm ci` and `npm test` for config-selection and Git-remote regression tests.
 Set `GITVERSION_BINARY` to a GitVersion executable to also run the real-history
 version tests. CI downloads the exact version pinned in [action.yml](action.yml)

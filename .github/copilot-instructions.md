@@ -1,0 +1,1 @@
+Read [AGENTS.md](../AGENTS.md). It is the canonical instruction entry point.
