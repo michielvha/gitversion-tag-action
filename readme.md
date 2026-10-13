@@ -112,10 +112,23 @@ It's possible to pass the version to other actions via the output.
 
 ## Development
 
-Run `npm ci` and `npm test` for config-selection and Git-remote regression tests.
+Use Node 24 or newer. Run `npm ci` and `npm test` for config-selection and Git-remote regression tests.
 Set `GITVERSION_BINARY` to a GitVersion executable to also run the real-history
 version tests. CI downloads the exact version pinned in [action.yml](action.yml)
 and exercises the composite action in dry-run mode.
+
+## Releasing This Action
+
+[.github/workflows/release.yml](.github/workflows/release.yml) calls the public
+`vhco-pro/.github` reusable release workflow at an immutable commit. On a push to
+`main`, it publishes an exact version tag and a GitHub Release with Conventional
+Commit notes. It does not create or update major/minor alias tags.
+
+Pull requests run the same workflow as a dry-run preview, producing notes in the
+job summary without publishing anything. Manual runs also default to dry-run.
+The caller grants `contents: write`; its own `GITHUB_TOKEN` writes the release
+in this repository, not in `vhco-pro`. No cross-account token or inherited secrets
+are required because the reusable workflow and its dependencies are public.
 
 ### Reference
 - [GitVersion Config File Specification](https://gitversion.net/docs/reference/configuration) - Complete reference for the configuration file. The bundled config is [here](gitversion.yml).
