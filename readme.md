@@ -102,13 +102,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Step
-      uses: actions/checkout@v6
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         fetch-tags: true
     - name: Tag the repo
       id: gitversion
-      uses: michielvha/gitversion-tag-action@v7.0.0
+      uses: michielvha/gitversion-tag-action@2700bccb9cf4a84c9c021cd866f8d357c526fb27 # v7.0.1
 ```
 
 To keep an existing custom config, pass `configFilePath: gitversion.yml` (or its
@@ -128,7 +128,7 @@ It's possible to pass the version to other actions via the output.
 ...
       - name: Build and Push Docker Image
         id: docker-build
-        uses: michielvha/docker-release-action@v1
+        uses: michielvha/docker-release-action@e7bb601b3297b74c958e4f36fef697f28febbadc # v1
         with:
           version: ${{ steps.gitversion.outputs.semVer }}
 ...
