@@ -9,7 +9,6 @@ The **gitversion-tag-action** automates tagging your repository with a semantic 
 | Input | Default | Description |
 | --- | --- | --- |
 | `configFilePath` | Empty | Custom GitVersion config path, relative to the caller's checkout or absolute. Empty uses the bundled config. |
-| `useDefaultConfig` | `false` | Force the bundled config even if a custom path is supplied. |
 | `prefix` | Empty | Tag prefix, for example `v`. Existing unprefixed tagging remains the default. |
 | `dry-run` | `false` | Compute version outputs without creating or pushing tags. |
 | `tagMessage` | Empty | Custom tag annotation. Empty uses the latest commit subject. |
@@ -37,6 +36,10 @@ The action follows these steps:
 2. Install the pinned GitVersion tool using `gittools/actions` and compute the version and all version outputs. The runner needs the .NET SDK required by the pinned tool; GitHub-hosted Ubuntu runners include it.
 3. Unless `dry-run` is enabled, create an annotated exact tag and push only that ref. An exact tag already on the remote is a successful no-op. Existing exact tags are never force-updated.
 
+The version tag identifies its commit. There is no separate SHA-named Git tag;
+consumers can pin the underlying full commit SHA directly for an immutable
+action or reusable-workflow reference.
+
 ## Shared Configuration
 
 [gitversion.yml](gitversion.yml) is the central config shipped with the action.
@@ -48,8 +51,11 @@ both prefixed (`v1.2.3`) and unprefixed (`1.2.3`) version tags.
 | --- | --- |
 | `feat!: ...`, `feat(scope)!: ...`, or an uppercase `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer | Major |
 | `feat: ...` or `feat(scope): ...` | Minor |
-| `fix`, `perf`, `refactor`, or `revert`, optionally scoped | Patch |
-| `chore`, `docs`, `style`, `test`, `ci`, and other non-breaking types | None |
+| `fix`, `chore`, `perf`, `refactor`, or `revert`, optionally scoped | Patch |
+| `docs`, `style`, `test`, `ci`, and other non-breaking types | None |
+
+`chore` is an intentional personal release policy, including Renovate's
+`chore(deps)` commits, so dependency updates produce a patch release.
 
 All commits since the version source are evaluated. A documentation commit does
 not suppress a preceding feature or breaking change. The main branch uses no
@@ -89,7 +95,7 @@ jobs:
 
 To keep an existing custom config, pass `configFilePath: gitversion.yml` (or its
 actual path). Explicit paths remain supported and missing files fail clearly.
-Remove that input, or add `useDefaultConfig: 'true'`, to adopt the bundled rules.
+Remove that input, or leave it empty, to adopt the bundled rules.
 For pull-request builds, use `dry-run: 'true'` and `contents: read` permissions.
 
 In this workflow:

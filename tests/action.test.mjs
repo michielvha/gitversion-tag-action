@@ -45,7 +45,6 @@ function execute(step, repository, overrides = {}) {
       GITHUB_OUTPUT: outputPath,
       ACTION_PATH: actionPath,
       CONFIG_FILE_PATH: '',
-      USE_DEFAULT_CONFIG: 'false',
       SEMVER: '1.2.3',
       PREFIX: '',
       DRY_RUN: 'false',
@@ -69,6 +68,7 @@ function successful(result) {
 test('metadata preserves defaults, pins, and version outputs', () => {
   assert.equal(action.inputs.prefix.default, '');
   assert.equal(action.inputs.configFilePath.default, '');
+  assert.equal(action.inputs.useDefaultConfig, undefined);
   assert.equal(action.inputs['dry-run'].default, 'false');
   assert.equal(action.inputs['floating-tags'], undefined);
   assert.equal(action.outputs.semVer.value, '${{ steps.gitversion.outputs.semVer }}');
@@ -123,12 +123,14 @@ test('explicit custom config remains supported', context => {
   assert.equal(outputs.path, 'custom config.yml');
 });
 
-test('useDefaultConfig explicitly overrides a supplied path', context => {
+test('absolute custom config paths are supported', context => {
   const { repository } = fixture(context);
+  const customConfig = join(repository, 'custom config.yml');
+  writeFileSync(customConfig, 'workflow: GitHubFlow/v1\n');
   const outputs = successful(execute(configStep, repository, {
-    CONFIG_FILE_PATH: 'missing.yml', USE_DEFAULT_CONFIG: 'true',
+    CONFIG_FILE_PATH: customConfig,
   }));
-  assert.equal(outputs.path, join(actionPath, 'gitversion.yml'));
+  assert.equal(outputs.path, customConfig);
 });
 
 test('missing custom config fails clearly', context => {
@@ -246,7 +248,6 @@ test('empty versions and malformed prefixes fail before pushing', context => {
 
 test('invalid boolean inputs fail clearly', context => {
   const { repository } = fixture(context);
-  assert.notEqual(execute(configStep, repository, { USE_DEFAULT_CONFIG: 'yes' }).status, 0);
   assert.notEqual(execute(tagStep, repository, { DRY_RUN: 'yes' }).status, 0);
 });
 
@@ -257,9 +258,13 @@ test('GitVersion conventional commit regressions', { skip: !process.env.GITVERSI
     repository, '/output', 'json', '/config', join(actionPath, 'gitversion.yml'), '/nocache',
   ], { env: fixtureEnvironment }).replace(/^\uFEFF/, '')).SemVer;
   const scenarios = [
-    ['onboarding without tags', [], undefined, '0.0.0'],
+    ['initial chore without tags bumps patch', [], undefined, '0.0.1'],
     ['docs do not bump', ['docs: clarify usage'], '1.2.3', '1.2.3'],
-    ['chore does not bump', ['chore: housekeeping'], '1.2.3', '1.2.3'],
+    ['chore bumps patch', ['chore: housekeeping'], '1.2.3', '1.2.4'],
+    ['Renovate chore deps bumps patch', ['chore(deps): update dependency'], '1.2.3', '1.2.4'],
+    ['docs do not suppress a chore bump', ['chore(deps): update dependency', 'docs: clarify usage'], '1.2.3', '1.2.4'],
+    ['chore does not reduce a feature bump', ['feat: add config', 'chore: housekeeping'], '1.2.3', '1.3.0'],
+    ['breaking chore bumps major', ['chore(deps)!: incompatible dependency'], '1.2.3', '2.0.0'],
     ['fix bumps patch', ['fix: correct tagging'], '1.2.3', '1.2.4'],
     ['feat bumps minor', ['feat: add config'], '1.2.3', '1.3.0'],
     ['docs do not suppress a feature', ['feat: add config', 'docs: clarify usage'], '1.2.3', '1.3.0'],

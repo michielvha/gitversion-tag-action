@@ -11,10 +11,6 @@ inputs:
     description: 'Custom GitVersion config path; empty uses the config shipped with this action'
     required: false
     default: ''
-  useDefaultConfig:
-    description: 'Use the bundled config even when configFilePath is supplied'
-    required: false
-    default: 'false'
   prefix:
     description: 'Prefix to add to the tag (e.g., "v")'
     required: false
@@ -132,7 +128,6 @@ runs:
     env:
       ACTION_PATH: ${{ github.action_path }}
       CONFIG_FILE_PATH: ${{ inputs.configFilePath }}
-      USE_DEFAULT_CONFIG: ${{ inputs.useDefaultConfig }}
     run: bash "$ACTION_PATH/scripts/select-config.sh"
   - name: Install GitVersion
     # SHA-pinned for supply-chain safety; Renovate keeps the digest + trailing tag comment fresh.
