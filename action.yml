@@ -1,5 +1,4 @@
 # reference: https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions
-# TODO: Add tag message & allow custom input overwrite
 name: 'GitVersion Tag Action'
 description: 'Tag a repo with a version calculated by GitVersion'
 
@@ -9,26 +8,127 @@ branding:
 
 inputs:
   configFilePath:
-    description: 'Path to the GitVersion configuration file'
-    required: true
-    default: 'gitversion.yml'
+    description: 'Custom GitVersion config path; empty uses the config shipped with this action'
+    required: false
+    default: ''
   prefix:
     description: 'Prefix to add to the tag (e.g., "v")'
     required: false
     default: ''
-  # tagMessage:
-  #   description: 'Optional custom tag message'
-  #   required: false
-
+  dry-run:
+    description: 'Compute all version outputs without creating or pushing tags'
+    required: false
+    default: 'false'
+  tagMessage:
+    description: 'Tag annotation; empty uses the latest commit subject'
+    required: false
+    default: ''
 
 outputs:
   semVer:
     description: 'The semantic version determined by GitVersion'
     value: ${{ steps.gitversion.outputs.semVer }}
+  AssemblySemFileVer:
+    description: 'Assembly file version'
+    value: ${{ steps.gitversion.outputs.AssemblySemFileVer }}
+  AssemblySemVer:
+    description: 'Assembly version'
+    value: ${{ steps.gitversion.outputs.AssemblySemVer }}
+  BranchName:
+    description: 'Branch used to compute the version'
+    value: ${{ steps.gitversion.outputs.BranchName }}
+  BuildMetaData:
+    description: 'Build metadata'
+    value: ${{ steps.gitversion.outputs.BuildMetaData }}
+  CommitDate:
+    description: 'Commit date'
+    value: ${{ steps.gitversion.outputs.CommitDate }}
+  CommitsSinceVersionSource:
+    description: 'Commits since the version source'
+    value: ${{ steps.gitversion.outputs.CommitsSinceVersionSource }}
+  EscapedBranchName:
+    description: 'Branch name safe for file names'
+    value: ${{ steps.gitversion.outputs.EscapedBranchName }}
+  FullBuildMetaData:
+    description: 'Full build metadata'
+    value: ${{ steps.gitversion.outputs.FullBuildMetaData }}
+  FullSemVer:
+    description: 'Semantic version including build metadata'
+    value: ${{ steps.gitversion.outputs.FullSemVer }}
+  InformationalVersion:
+    description: 'Informational version'
+    value: ${{ steps.gitversion.outputs.InformationalVersion }}
+  Major:
+    description: 'Major version number'
+    value: ${{ steps.gitversion.outputs.Major }}
+  MajorMinorPatch:
+    description: 'Major.Minor.Patch without a prerelease label'
+    value: ${{ steps.gitversion.outputs.MajorMinorPatch }}
+  Minor:
+    description: 'Minor version number'
+    value: ${{ steps.gitversion.outputs.Minor }}
+  Patch:
+    description: 'Patch version number'
+    value: ${{ steps.gitversion.outputs.Patch }}
+  PreReleaseLabel:
+    description: 'Prerelease label'
+    value: ${{ steps.gitversion.outputs.PreReleaseLabel }}
+  PreReleaseNumber:
+    description: 'Prerelease number'
+    value: ${{ steps.gitversion.outputs.PreReleaseNumber }}
+  PreReleaseTag:
+    description: 'Prerelease label and number'
+    value: ${{ steps.gitversion.outputs.PreReleaseTag }}
+  PreReleaseTagWithDash:
+    description: 'Prerelease tag with a leading dash'
+    value: ${{ steps.gitversion.outputs.PreReleaseTagWithDash }}
+  Sha:
+    description: 'Commit SHA'
+    value: ${{ steps.gitversion.outputs.Sha }}
+  ShortSha:
+    description: 'Short commit SHA'
+    value: ${{ steps.gitversion.outputs.ShortSha }}
+  UncommittedChanges:
+    description: 'Number of uncommitted changes'
+    value: ${{ steps.gitversion.outputs.UncommittedChanges }}
+  VersionSourceDistance:
+    description: 'Distance from the version source'
+    value: ${{ steps.gitversion.outputs.VersionSourceDistance }}
+  VersionSourceIncrement:
+    description: 'Increment from the version source'
+    value: ${{ steps.gitversion.outputs.VersionSourceIncrement }}
+  VersionSourceSemVer:
+    description: 'Version source semantic version'
+    value: ${{ steps.gitversion.outputs.VersionSourceSemVer }}
+  VersionSourceSha:
+    description: 'Version source SHA'
+    value: ${{ steps.gitversion.outputs.VersionSourceSha }}
+  WeightedPreReleaseNumber:
+    description: 'Weighted prerelease number'
+    value: ${{ steps.gitversion.outputs.WeightedPreReleaseNumber }}
+  tagged:
+    description: 'Whether this run pushed tags'
+    value: ${{ steps.tag.outputs.tagged }}
+  pushed-tag:
+    description: 'Exact tag pushed, or empty when skipped'
+    value: ${{ steps.tag.outputs.pushed-tag }}
+  pushed-tags:
+    description: 'All tags pushed, space separated'
+    value: ${{ steps.tag.outputs.pushed-tags }}
+  skip-reason:
+    description: 'dry-run, tag-exists, or empty when tags were pushed'
+    value: ${{ steps.tag.outputs.skip-reason }}
 
 runs:
   using: composite
   steps:
+  - name: Select GitVersion config
+    id: config
+    shell: bash
+    env:
+      ACTION_PATH: ${{ github.action_path }}
+      CONFIG_FILE_PATH: ${{ inputs.configFilePath }}
+    run: bash "$ACTION_PATH/scripts/select-config.sh"
   - name: Install GitVersion
     # SHA-pinned for supply-chain safety; Renovate keeps the digest + trailing tag comment fresh.
     uses: gittools/actions/gitversion/setup@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
@@ -40,43 +140,14 @@ runs:
     uses: gittools/actions/gitversion/execute@03e8e0922292bf0491859846a823b253d8dd06ce # v4.6.0
     with:
       # `useConfigFile` was removed in gittools v4: setting configFilePath is enough.
-      configFilePath: ${{ inputs.configFilePath }}
+      configFilePath: ${{ steps.config.outputs.path }}
   - name: Tag the repo
+    id: tag
     shell: bash
-    run: |
-      echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-      COMMIT_MSG=$(git log -1 --pretty=%s)
-      echo "Latest commit message: $COMMIT_MSG"
-      git config user.name "GitHub Actions"
-      git config user.email "actions@github.com"
-      git tag "${{ inputs.prefix }}${{ steps.gitversion.outputs.semVer }}" -m "$COMMIT_MSG"
-      git push origin "${{ inputs.prefix }}${{ steps.gitversion.outputs.semVer }}"
-      
-  # - name: tag the repo # old version before adding tag message
-  #   # if: ${{ github.ref == 'refs/heads/master' }}
-  #   shell: bash
-  #   run: |
-  #     echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-  #     git tag ${{ steps.gitversion.outputs.semVer }} -m "TAG_MESSAGE"
-  #     git push origin ${{ steps.gitversion.outputs.semVer }}
-
-  # Possible improvement
-  # - name: Tag the repo
-  #   shell: bash
-  #   run: |
-  #     set -e
-  
-  #     TAG="${{ steps.gitversion.outputs.semVer }}"
-  #     BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  #     MESSAGE="${{ inputs.tagMessage }}"
-  #     if [ -z "$MESSAGE" ]; then
-  #       MESSAGE="Release $TAG from $BRANCH"
-  #     fi
-  
-  #     echo "Tagging $TAG with message: $MESSAGE"
-  
-  #     git config user.name "GitHub Actions"
-  #     git config user.email "actions@github.com"
-  
-  #     git tag -a "$TAG" -m "$MESSAGE"
-  #     git push origin "$TAG"
+    env:
+      ACTION_PATH: ${{ github.action_path }}
+      SEMVER: ${{ steps.gitversion.outputs.semVer }}
+      PREFIX: ${{ inputs.prefix }}
+      DRY_RUN: ${{ inputs.dry-run }}
+      TAG_MESSAGE: ${{ inputs.tagMessage }}
+    run: bash "$ACTION_PATH/scripts/tag.sh"

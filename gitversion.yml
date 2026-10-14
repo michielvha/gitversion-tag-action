@@ -1,0 +1,35 @@
+workflow: GitHubFlow/v1
+major-version-bump-message: '(?m)(?-i)(^BREAKING[ -]CHANGE:|\A[a-zA-Z]+(\([^)]+\))?!:)'
+minor-version-bump-message: '^feat(\([^)]+\))?:\s'
+patch-version-bump-message: '^(fix|chore|perf|refactor|revert)(\([^)]+\))?:\s'
+commit-message-incrementing: Enabled
+strategies:
+  - Fallback
+  - MergeMessage
+  - TaggedCommit
+  - TrackReleaseBranches
+  - VersionInBranchName
+branches:
+  main:
+    regex: ^master$|^main$
+    increment: None
+    prevent-increment:
+      of-merged-branch: true
+    track-merge-target: false
+    track-merge-message: true
+    is-main-branch: true
+    mode: ContinuousDeployment
+  release:
+    regex: ^release/(?<BranchName>[0-9]+\.[0-9]+\.[0-9]+)$
+    label: ''
+    increment: None
+    prevent-increment:
+      when-current-commit-tagged: true
+      of-merged-branch: true
+    is-release-branch: true
+    mode: ContinuousDeployment
+    source-branches:
+      - main
+commit-date-format: ddMMyyyy
+assembly-versioning-scheme: MajorMinorPatch
+assembly-informational-format: '{SemVer}'

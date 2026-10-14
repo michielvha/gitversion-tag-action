@@ -1,0 +1,43 @@
+name: Test action
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: shellcheck scripts/*.sh
+      - name: Install the pinned GitVersion for history tests
+        run: node scripts/install-test-gitversion.mjs
+      - run: npm test
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Run the composite action without a caller config
+        id: version
+        uses: ./
+        with:
+          dry-run: 'true'
+      - name: Verify outputs and clean checkout
+        shell: bash
+        env:
+          SEMVER: ${{ steps.version.outputs.semVer }}
+          FULL_SEMVER: ${{ steps.version.outputs.FullSemVer }}
+          TAGGED: ${{ steps.version.outputs.tagged }}
+          SKIP_REASON: ${{ steps.version.outputs.skip-reason }}
+        run: bash scripts/verify-smoke.sh
