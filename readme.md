@@ -54,8 +54,8 @@ both prefixed (`v1.2.3`) and unprefixed (`1.2.3`) version tags.
 | `fix`, `chore`, `perf`, `refactor`, or `revert`, optionally scoped | Patch |
 | `docs`, `style`, `test`, `ci`, and other non-breaking types | None |
 
-`chore` is an intentional personal release policy, including Renovate's
-`chore(deps)` commits, so dependency updates produce a patch release.
+The bundled configuration treats `chore`, including Renovate's `chore(deps)`
+commits, as a patch increment so dependency updates produce a release.
 
 All commits since the version source are evaluated. A documentation commit does
 not suppress a preceding feature or breaking change. The main branch uses no
@@ -115,34 +115,6 @@ It's possible to pass the version to other actions via the output.
           version: ${{ steps.gitversion.outputs.semVer }}
 ...
 ```
-
-## Development
-
-Repository instructions start in [AGENTS.md](AGENTS.md), which pins the personal
-conventions in `vhco-pro/docs`. Substantial shell logic and CI helpers live in
-`scripts/`; the action metadata and workflows invoke them.
-
-Use Node 24 or newer. Run `npm ci` and `npm test` for config-selection and Git-remote regression tests.
-Set `GITVERSION_BINARY` to a GitVersion executable to also run the real-history
-version tests. CI downloads the exact version pinned in [action.yml](action.yml)
-and exercises the composite action in dry-run mode.
-
-## Releasing This Action
-
-[.github/workflows/release.yml](.github/workflows/release.yml) calls the public
-`vhco-pro/.github` reusable release workflow at an immutable commit. On a push to
-`main`, it publishes an exact version tag and a GitHub Release with Conventional
-Commit notes. It does not create or update major/minor alias tags.
-
-Regression and composite smoke checks run through the reusable local test
-workflow before the release job. The caller passes the same SHA as `workflow-ref`
-so shared scripts and configuration come from the selected workflow revision.
-
-Pull requests run the same workflow as a dry-run preview, producing notes in the
-job summary without publishing anything. Manual runs also default to dry-run.
-The caller grants `contents: write`; its own `GITHUB_TOKEN` writes the release
-in this repository, not in `vhco-pro`. No cross-account token or inherited secrets
-are required because the reusable workflow and its dependencies are public.
 
 ### Reference
 - [GitVersion Config File Specification](https://gitversion.net/docs/reference/configuration) - Complete reference for the configuration file. The bundled config is [here](gitversion.yml).
