@@ -27,7 +27,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     permissions:
       contents: write
-    uses: vhco-pro/.github/.github/workflows/reusable-release.yml@1d672e004fb5decca5c73bc8de9da63d317364c6 # reviewed PR 15
+    uses: vhco-pro/.github/.github/workflows/reusable-release.yml@71c23eca08025fe691b4e0696f2f1cda02b20587 # v1.1.0
     with:
-      workflow-ref: 1d672e004fb5decca5c73bc8de9da63d317364c6
+      workflow-ref: 71c23eca08025fe691b4e0696f2f1cda02b20587
       dry-run: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry-run) }}
