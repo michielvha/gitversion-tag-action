@@ -61,12 +61,30 @@ All commits since the version source are evaluated. A documentation commit does
 not suppress a preceding feature or breaking change. The main branch uses no
 automatic increment; maintenance branches use `release/MAJOR.MINOR.PATCH`.
 
+## Upgrade from v6
+
+The `v7.0.0` line uses full semantic versions. Existing `v1` through `v6` tags
+are preserved, and updating this action does not happen automatically for callers
+pinned to them. There is no moving `v7` alias.
+
+The default configuration changed from a caller-owned `gitversion.yml` to the
+bundled rules. To keep your repository's existing versioning behavior when
+upgrading, pass its config explicitly:
+
+```yaml
+with:
+  configFilePath: gitversion.yml
+```
+
+Workflows already supplying `configFilePath` continue to use that file. Omit it
+only when you want the bundled behavior. The default tag prefix is still empty.
+
 ## Example Workflow
 
 To use the **Tag a git version** action in a GitHub workflow, refer to the example below:
 
 > [!WARNING]
-> For production environments make sure to replace `@main` by a pinned version.
+> For production, pin the full commit SHA of a reviewed release for immutable execution.
 
 ```yaml
 name: GitVersion Tag
@@ -90,7 +108,7 @@ jobs:
         fetch-tags: true
     - name: Tag the repo
       id: gitversion
-      uses: michielvha/gitversion-tag-action@main
+      uses: michielvha/gitversion-tag-action@v7.0.0
 ```
 
 To keep an existing custom config, pass `configFilePath: gitversion.yml` (or its
