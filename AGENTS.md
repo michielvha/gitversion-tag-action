@@ -1,7 +1,7 @@
 # Repository instructions
 
 Read the personal conventions at
-https://github.com/vhco-pro/docs/blob/a41d348a822cc286ab0eac6457ac7d1e1b46a7dc/AGENTS.md
+https://github.com/vhco-pro/docs/blob/8d77d516181df9a57758c0507d198adcfcbfa5ee/AGENTS.md
 and follow its task routes before implementation. For this repo, read
 `conventions/coding.md`, `conventions/delivery.md`, and
 `knowledge/shared-delivery.md` at that revision. For docs changes, also read
