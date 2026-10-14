@@ -78,6 +78,10 @@ test('metadata preserves defaults, pins, and version outputs', () => {
   for (const step of action.runs.steps.filter(step => step.uses)) {
     assert.match(step.uses, /@[a-f0-9]{40}$/);
   }
+  const readme = readFileSync(join(actionPath, 'readme.md'), 'utf8');
+  for (const match of readme.matchAll(/^\s*uses:\s*(\S+)/gm)) {
+    assert.match(match[1], /@[a-f0-9]{40}$/, 'README examples must pin immutable commits');
+  }
   for (const step of action.runs.steps.filter(step => step.run)) {
     assert.ok(!step.run.includes('${{'), 'Inputs must enter shell scripts through environment variables');
     assert.equal(step.run.trim().split('\n').length, 1, 'Workflow steps invoke scripts rather than embed logic');
