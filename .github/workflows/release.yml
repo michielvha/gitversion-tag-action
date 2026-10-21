@@ -27,6 +27,6 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     permissions:
       contents: write
-    uses: vhco-pro/gh-release-workflow/.github/workflows/gh-release.yml@ee672ed4c19ed5d4810779100c1c6aecfb385e61 # unreleased draft
+    uses: vhco-pro/gh-release-workflow/.github/workflows/gh-release.yml@71187ceb6e9ebdbbee78cb0799f3a28fc0179efc # v0.1.0nreleased draft
     with:
       dry-run: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry-run) }}
