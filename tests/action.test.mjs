@@ -287,3 +287,27 @@ test('GitVersion conventional commit regressions', { skip: !process.env.GITVERSI
     });
   }
 });
+
+test('a tagged branch head keeps its prerelease version', { skip: !process.env.GITVERSION_BINARY }, async context => {
+  const fixtureEnvironment = Object.fromEntries(Object.entries(process.env)
+    .filter(([name]) => !name.startsWith('GITHUB_')));
+  const version = (repository) => JSON.parse(run(process.env.GITVERSION_BINARY, [
+    repository, '/output', 'json', '/config', join(actionPath, 'gitversion.yml'), '/nocache',
+  ], { env: fixtureEnvironment }).replace(/^\uFEFF/, '')).SemVer;
+  // A rerun at a commit that already has its prerelease tag must compute that tag again, so the
+  // action finds it and tags nothing; the next commit takes the next prerelease number.
+  for (const [branch, label] of [['feat/x', 'feat-x'], ['feature/x', 'x'], ['pull/7', 'PullRequest7']]) {
+    await context.test(branch, child => {
+      const { repository, git } = fixture(child);
+      git('tag', 'v1.2.3');
+      git('checkout', '-b', branch);
+      git('commit', '--allow-empty', '-m', 'fix: correct tagging');
+      const first = version(repository);
+      assert.equal(first, `1.2.4-${label}.1`);
+      git('tag', `v${first}`);
+      assert.equal(version(repository), first);
+      git('commit', '--allow-empty', '-m', 'fix: another correction');
+      assert.equal(version(repository), `1.2.4-${label}.2`);
+    });
+  }
+});

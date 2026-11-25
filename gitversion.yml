@@ -30,6 +30,14 @@ branches:
     mode: ContinuousDeployment
     source-branches:
       - main
+  # A rerun at a commit that already has its prerelease tag computes that tag again, so it tags
+  # nothing; GitHubFlow's defaults would count the next prerelease and tag the commit twice.
+  feature:
+    prevent-increment:
+      when-current-commit-tagged: true
+  unknown:
+    prevent-increment:
+      when-current-commit-tagged: true
 commit-date-format: ddMMyyyy
 assembly-versioning-scheme: MajorMinorPatch
 assembly-informational-format: '{SemVer}'
