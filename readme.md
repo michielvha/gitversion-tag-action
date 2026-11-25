@@ -60,6 +60,8 @@ commits, as a patch increment so dependency updates produce a release.
 All commits since the version source are evaluated. A documentation commit does
 not suppress a preceding feature or breaking change. The main branch uses no
 automatic increment; maintenance branches use `release/MAJOR.MINOR.PATCH`.
+On any branch, a commit that already has its version tag computes that version
+again, so a rerun there tags nothing.
 
 ## Upgrade from v6
 
